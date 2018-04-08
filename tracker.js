@@ -27,6 +27,12 @@ app.post('/', (req, res) => {
 
   const date = (new Date()).toISOString();
 
+  console.log({
+    day: date.split('T')[0],
+    date: date,
+    timestamp: Date.now(),
+  });
+
   const {
     id,
     host,
