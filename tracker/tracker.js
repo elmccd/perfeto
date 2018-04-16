@@ -1,8 +1,11 @@
 const bodyParser = require('body-parser');
 const express = require('express');
-var elasticsearch = require('elasticsearch');
-var client = new elasticsearch.Client({
-  host: 'localhost:9200',
+const elasticsearch = require('elasticsearch');
+
+const config = require('./env.json');
+
+const client = new elasticsearch.Client({
+  host: config.elasticsearch.host,
   log: 'trace'
 });
 
@@ -20,11 +23,9 @@ app.use(function (req, res, next) {
 
 app.get('/', (req, res) => res.send('Hello World!'));
 
-app.get('/tracking.js', express.static('./'));
+app.get('/tracking.js', express.static('../tracking-script/src'));
 
 app.post('/', (req, res) => {
-  console.log(req.body);
-
   const date = (new Date()).toISOString();
 
   console.log({
@@ -61,7 +62,7 @@ app.post('/', (req, res) => {
   res.sendStatus(204);
 });
 
-app.listen(3005, () => console.log('Example app listening on port 3000!'));
+app.listen(config.port, () => console.log(`Perfeto tracker listening on port ${config.port}!`));
 
 client.ping({
   // ping usually has a 3000ms timeout

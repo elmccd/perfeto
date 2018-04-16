@@ -1,10 +1,15 @@
+import { convertESResponse } from "./responses/convertESResponse";
+import { ESSearchResponse } from "./structures/ESSearchResponse";
+
 const bodyParser = require('body-parser');
 const express = require('express');
 const elasticsearch = require('elasticsearch');
 
+const config = require('./env.json');
+
+
 const client = new elasticsearch.Client({
-  host: 'localhost:9200',
-  log: 'trace'
+  host: config.elasticsearch.host
 });
 
 const app = express();
@@ -14,17 +19,34 @@ app.use(bodyParser.json());
 
 app.get('/', (req, res) => res.send('Hello World!'));
 
-app.get('/search/:interval?', (req, res) => {
+app.get('/search', (req, res) => {
   const interval = {
     minute: 'minute',
     hour: 'hour',
     day: 'day',
-  }[req.params.interval] || 'day';
+  }[req.query.i] || 'day';
+
+  const gt = req.query.gt || '7d';
+  const lt = req.query.lt || '0d';
+
+  const round = {
+      minute: 'm',
+      hour: 'h',
+      day: 'd',
+  }[req.query.i] || 'd';
 
   client.search({
     index: 'measure',
     size: 0,
     body: {
+      "query": {
+        "range" : {
+          "date" : {
+            "gte" : `now-${gt}/${round}`,
+            "lte" : `now-${lt}/${round}`
+          }
+        }
+      },
       "aggs" : {
         "measure" : {
           "date_histogram" : {
@@ -40,16 +62,17 @@ app.get('/search/:interval?', (req, res) => {
         }
       }
     }
-  }, function (error, response) {
+  }, function (error, response: ESSearchResponse) {
     console.log('error', error);
-    console.log('response', response);
 
-    res.json(response);
+    res.json(convertESResponse(response, {
+        interval, gt, lt, round
+    }));
   });
 
 });
 
-app.listen(3006, () => console.log('Example app listening on port 3000!'));
+app.listen(config.port, () => console.log(`Perfeto API listening on port ${config.port}!`));
 
 client.ping({
   // ping usually has a 3000ms timeout
