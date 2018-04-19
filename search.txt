@@ -1,0 +1,17 @@
+POST /measure/_search?size=1
+{
+    "aggs" : {
+        "measure" : {
+            "date_histogram" : {
+                "field" : "date",
+                "interval" : "hour"
+            },
+            "aggs" : {
+              "domAvg" : { "avg" : { "field" : "dom" } },
+              "domPercentiles" : { "percentiles" : { "field" : "dom" } },
+              "loadAvg" : { "avg" : { "field" : "load" } },
+              "loadPercentiles" : { "percentiles" : { "field" : "load" } }
+          }
+        }
+    }
+}
